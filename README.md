@@ -40,10 +40,21 @@ python anthropic-gateway.py --target http://localhost:4000/v1
 ## Claude Code
 
 ```bash
-# Basic
+# Start gateway
+python anthropic-gateway.py -t http://localhost:11434/v1 -p 8080
+
+# Option 1: ANTHROPIC_DEFAULT_SONNET_MODEL (recommended — cleanest)
+ANTHROPIC_BASE_URL=http://localhost:8080 \
+ANTHROPIC_DEFAULT_SONNET_MODEL=llama3 \
+claude
+
+# Option 2: --model-map for multi-model routing
+python anthropic-gateway.py -t http://localhost:11434/v1 \
+  --model-map '{"claude-3-5-sonnet-20241022": "llama3"}' \
+  -p 8080
 ANTHROPIC_BASE_URL=http://localhost:8080 claude
 
-# With model override
+# Option 3: --model (all requests use same model)
 python anthropic-gateway.py -t http://localhost:11434/v1 -m llama3 -p 8080
 ANTHROPIC_BASE_URL=http://localhost:8080 claude
 ```
