@@ -37,6 +37,89 @@ python anthropic-gateway.py --target https://api.together.xyz/v1 --api-key xxx -
 python anthropic-gateway.py --target http://localhost:4000/v1
 ```
 
+## Supported Target Models
+
+OpenAI-compatible API를 제공하는 모든 LLM을 사용할 수 있습니다:
+
+### Ollama (local)
+```bash
+# 설치된 모델 확인
+ollama list
+
+# 추천 모델
+ollama pull llama3          # General purpose
+ollama pull qwen2.5:72b     # Large, high quality
+ollama pull phi3:mini       # Small, fast
+ollama pull deepseek-coder-v2  # Coding
+ollama pull gemma2:27b      # Google
+ollama pull mistral:7b      # Fast, efficient
+ollama pull codellama       # Code focused
+ollama pull llama3.1:8b     # Latest Llama
+
+python anthropic-gateway.py -t http://localhost:11434/v1 -m llama3
+```
+
+### vLLM (local)
+```bash
+python -m vllm.entrypoints.openai.api_server --model meta-llama/Llama-3-8B
+python anthropic-gateway.py -t http://localhost:8000/v1 -m meta-llama/Llama-3-8B
+```
+
+### LiteLLM Proxy (unified)
+```bash
+# 하나의 프록시로 다양한 모델 통합
+litellm --model ollama/llama3 --port 4000
+
+python anthropic-gateway.py -t http://localhost:4000/v1 -m ollama/llama3
+```
+
+### OpenRouter (cloud)
+```bash
+# https://openrouter.ai/models 에서 전체 목록 확인
+python anthropic-gateway.py -t https://openrouter.ai/api/v1 \
+  --api-key sk-or-xxx \
+  --model-map '{
+    "claude-3-5-sonnet-20241022": "meta-llama/llama-3.1-70b-instruct",
+    "claude-3-opus-20240229": "qwen/qwen-2.5-72b-instruct",
+    "claude-3-5-haiku-20241022": "meta-llama/llama-3.1-8b-instruct"
+  }'
+```
+
+### Together AI (cloud)
+```bash
+python anthropic-gateway.py -t https://api.together.xyz/v1 \
+  --api-key xxx \
+  --model-map '{
+    "claude-3-5-sonnet-20241022": "meta-llama/Llama-3-70b-chat-hf",
+    "claude-3-5-haiku-20241022": "meta-llama/Llama-3-8b-chat-hf"
+  }'
+```
+
+### Groq (cloud, ultra-fast)
+```bash
+python anthropic-gateway.py -t https://api.groq.com/openai/v1 \
+  --api-key gsk_xxx \
+  --model-map '{
+    "claude-3-5-sonnet-20241022": "llama-3.1-70b-versatile",
+    "claude-3-5-haiku-20241022": "llama-3.1-8b-instant"
+  }'
+```
+
+### Google AI Studio (Gemini)
+```bash
+python anthropic-gateway.py -t https://generativelanguage.googleapis.com/v1beta/openai \
+  --api-key xxx \
+  --model gemini-2.0-flash
+```
+
+### OpenAI-compatible (any)
+```bash
+# 어떤 OpenAI 호환 API든 가능
+python anthropic-gateway.py -t https://your-api.com/v1 --api-key xxx -m your-model
+```
+
+---
+
 ## Claude Code
 
 ```bash
