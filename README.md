@@ -42,19 +42,44 @@ python anthropic-gateway.py --target http://localhost:4000/v1
 ```bash
 # Start gateway
 python anthropic-gateway.py -t http://localhost:11434/v1 -p 8080
+```
 
-# Option 1: ANTHROPIC_DEFAULT_SONNET_MODEL (recommended — cleanest)
+### Option 1: Claude Code 환경변수 (recommended — cleanest)
+
+Claude Code의 환경변수로 모델을 직접 지정하면 gateway는 그대로 통과시킵니다.
+
+```bash
+# Sonnet / Opus / Haiku 각각 다른 모델 매핑
+ANTHROPIC_BASE_URL=http://localhost:8080 \
+ANTHROPIC_DEFAULT_SONNET_MODEL=llama3 \
+ANTHROPIC_DEFAULT_OPUS_MODEL=qwen2.5:72b \
+ANTHROPIC_DEFAULT_HAIKU_MODEL=phi3:mini \
+claude
+
+# 하나만 지정
 ANTHROPIC_BASE_URL=http://localhost:8080 \
 ANTHROPIC_DEFAULT_SONNET_MODEL=llama3 \
 claude
+```
 
-# Option 2: --model-map for multi-model routing
+| 환경변수 | 설명 |
+|---------|------|
+| `ANTHROPIC_DEFAULT_SONNET_MODEL` | Claude Code 기본 모델 (Sonnet) 대체 |
+| `ANTHROPIC_DEFAULT_OPUS_MODEL` | Claude Code Opus 모델 대체 |
+| `ANTHROPIC_DEFAULT_HAIKU_MODEL` | Claude Code Haiku 모델 대체 |
+
+### Option 2: --model-map (다중 모델 라우팅)
+
+```bash
 python anthropic-gateway.py -t http://localhost:11434/v1 \
-  --model-map '{"claude-3-5-sonnet-20241022": "llama3"}' \
+  --model-map '{"claude-3-5-sonnet-20241022": "llama3", "claude-3-opus-20240229": "qwen2.5:72b"}' \
   -p 8080
 ANTHROPIC_BASE_URL=http://localhost:8080 claude
+```
 
-# Option 3: --model (all requests use same model)
+### Option 3: --model (모든 요청을 하나의 모델로)
+
+```bash
 python anthropic-gateway.py -t http://localhost:11434/v1 -m llama3 -p 8080
 ANTHROPIC_BASE_URL=http://localhost:8080 claude
 ```
