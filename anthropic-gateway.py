@@ -444,6 +444,58 @@ def list_models():
         return jsonify({"error": {"message": str(e), "type": "connection_error"}}), 502
 
 
+@app.route("/v1/messages/count_tokens", methods=["POST"])
+def count_tokens():
+    """Count tokens — estimate based on target API or rough character-based fallback."""
+    data = request.get_json(force=True)
+    model = data.get("model", CONFIG["default_model"]) or "unknown"
+
+    # Apply model mapping
+    model_map = CONFIG.get("model_map", {})
+    if model in model_map:
+        model = model_map[model]
+    elif CONFIG["default_model"]:
+        model = CONFIG["default_model"]
+
+    # Try target's token counting if available (tiktoken, etc.)
+    # Most OpenAI-compatible APIs don't have count_tokens, so estimate
+    messages = data.get("messages", [])
+    system = data.get("system", "")
+
+    # Rough estimation: ~4 chars per token for English, ~2 for CJK
+    total_chars = len(system) if isinstance(system, str) else 0
+    for msg in messages:
+        content = msg.get("content", "")
+        if isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict) and block.get("type") == "text":
+                    total_chars += len(block.get("text", ""))
+        elif isinstance(content, str):
+            total_chars += len(content)
+
+    estimated_tokens = total_chars // 3  # Conservative estimate
+
+    return jsonify({"input_tokens": estimated_tokens})
+
+
+@app.route("/v1/messages/batches", methods=["POST"])
+def create_batch():
+    """Batch messages — proxy to target or return not supported."""
+    return jsonify({
+        "type": "error",
+        "error": {"type": "not_supported_error", "message": "Batch API not yet supported. Use streaming for throughput."}
+    }), 501
+
+
+@app.route("/v1/messages/<message_id>", methods=["GET"])
+def get_message(message_id):
+    """Get message by ID — not supported (stateless proxy)."""
+    return jsonify({
+        "type": "error",
+        "error": {"type": "not_supported_error", "message": "Message retrieval not supported. This is a stateless proxy."}
+    }), 501
+
+
 @app.route("/", methods=["GET"])
 def health():
     return jsonify(
