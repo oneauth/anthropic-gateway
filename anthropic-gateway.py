@@ -155,6 +155,17 @@ def parse_anthropic_request(data):
     # Build OpenAI request
     model = data.get("model", CONFIG["default_model"]) or CONFIG["default_model"] or "gpt-3.5-turbo"
 
+    # Apply model mapping (Claude model → target model)
+    model_map = CONFIG.get("model_map", {})
+    if model in model_map:
+        original_model = model
+        model = model_map[model]
+        log(f"Model mapped: {original_model} → {model}")
+    elif CONFIG["default_model"] and model not in model_map:
+        # If default model set and no mapping found, use default
+        model = CONFIG["default_model"]
+        log(f"Using default model: {model}")
+
     openai_request = {
         "model": model,
         "messages": openai_messages,
@@ -431,6 +442,7 @@ def main():
     parser.add_argument("--target", "-t", required=True, help="Target OpenAI-compatible API URL (e.g., http://localhost:11434/v1)")
     parser.add_argument("--api-key", "-k", help="Target API key (Bearer token)")
     parser.add_argument("--model", "-m", default=None, help="Default model (overrides client model)")
+    parser.add_argument("--model-map", type=str, default=None, help='Model mapping JSON file or inline JSON, e.g. \'{"claude-3-5-sonnet-20241022": "llama3", "claude-3-opus-20240229": "qwen2.5:72b"}\'')
     parser.add_argument("--max-tokens", type=int, default=4096, help="Default max tokens (default: 4096)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
     args = parser.parse_args()
@@ -440,6 +452,21 @@ def main():
     CONFIG["default_model"] = args.model
     CONFIG["max_tokens"] = args.max_tokens
     CONFIG["verbose"] = args.verbose
+
+    # Load model mapping
+    model_map = {}
+    if args.model_map:
+        try:
+            if Path(args.model_map).exists():
+                with open(args.model_map) as f:
+                    model_map = json.load(f)
+                log(f"Loaded model map from file: {args.model_map}")
+            else:
+                model_map = json.loads(args.model_map)
+                log(f"Loaded inline model map: {len(model_map)} entries")
+        except Exception as e:
+            print(f"[gateway] Warning: Failed to parse model map: {e}", file=sys.stderr)
+    CONFIG["model_map"] = model_map
 
     print(f"""
 ╔══════════════════════════════════════════════╗
