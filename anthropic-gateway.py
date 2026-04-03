@@ -423,6 +423,27 @@ def complete():
     )
 
 
+@app.route("/v1/models", methods=["GET"])
+def list_models():
+    """Proxy /v1/models from target API."""
+    url = CONFIG["target_url"]
+    base_url = url.replace("/chat/completions", "").replace("/completions", "").rstrip("/")
+    models_url = base_url + "/models"
+
+    headers = {}
+    if CONFIG["target_api_key"]:
+        headers["Authorization"] = f"Bearer {CONFIG['target_api_key']}"
+
+    try:
+        resp = requests.get(models_url, headers=headers, timeout=10)
+        if resp.status_code == 200:
+            return jsonify(resp.json())
+        else:
+            return jsonify({"error": {"message": f"Target returned {resp.status_code}", "type": "upstream_error"}}), resp.status_code
+    except Exception as e:
+        return jsonify({"error": {"message": str(e), "type": "connection_error"}}), 502
+
+
 @app.route("/", methods=["GET"])
 def health():
     return jsonify(
